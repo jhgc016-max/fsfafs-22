@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173F35">
+  <meta name="description" content="30명을 위한 HD 프로젝트 협업 대시보드. 회의록, 공유 자료, 일정과 진행률을 한곳에서 관리합니다.">
+  <title>HD 프로젝트 · 팀 대시보드</title>
+  <!-- 나눔고딕만 외부에서 불러옵니다. CSS·JS·아이콘·데이터는 이 HTML 안에 있습니다. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* 01. 디자인 설정: 기본 색상은 다크그린·크림·골드 3가지입니다.
+       흐린 배경과 선은 같은 색의 투명도로 만듭니다. 색상을 바꿀 때 이곳부터 수정하세요. */
+    :root { --green:#173F35; --cream:#F5F2E9; --gold:#C9AB6C; --line:rgb(23 63 53 / .15); --muted:rgb(23 63 53 / .72); --paper:rgb(245 242 233 / .66); --radius:20px; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:30px; }
+    body { margin:0; background:var(--cream); color:var(--green); font-family:'Nanum Gothic','Malgun Gothic',sans-serif; font-size:14px; line-height:1.65; }
+    a { color:inherit; text-decoration:none; }
+    button,input,select { font:inherit; color:inherit; }
+    button,a,input,select { -webkit-tap-highlight-color:transparent; }
+    button { cursor:pointer; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    button { background:none; }
+    :focus-visible { outline:3px solid var(--gold); outline-offset:4px; }
+    .icon { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:middle; }
+    .skip { position:fixed; z-index:100; left:20px; top:-100px; background:var(--green); color:var(--cream); padding:12px; }
+    .skip:focus { top:10px; }
+    .sidebar { width:226px; position:fixed; inset:0 auto 0 0; background:var(--green); color:var(--cream); padding:38px 23px 25px; display:flex; flex-direction:column; z-index:20; }
+    .brand { display:flex; align-items:center; gap:12px; font-size:19px; font-weight:800; letter-spacing:-.7px; }
+    .brand-mark { background:var(--gold); color:var(--green); width:40px; height:40px; border-radius:12px; display:grid; place-items:center; font-size:17px; letter-spacing:-1px; }
+    .eyebrow { font-size:10px; font-weight:800; letter-spacing:2px; }
+    .sidebar .eyebrow { color:rgb(245 242 233 / .55); margin:46px 12px 13px; }
+    .nav { display:grid; gap:7px; }
+    .nav a { display:flex; gap:13px; align-items:center; padding:12px 15px; border-radius:10px; color:rgb(245 242 233 / .7); font-size:13px; transition:background .2s,color .2s; }
+    .nav a:hover,.nav a.active { background:rgb(245 242 233 / .1); color:var(--cream); }
+    .nav a.active::after { content:''; width:5px; height:5px; border-radius:50%; background:var(--gold); margin-left:auto; }
+    .side-bottom { margin-top:auto; }
+    .team-box { border:1px solid rgb(245 242 233 / .18); border-radius:14px; padding:17px 14px; margin-top:38px; }
+    .team-box strong { display:block; margin:7px 0 4px; font-size:14px; }
+    .team-box p { font-size:11px; color:rgb(245 242 233 / .67); margin:0; }
+    .avatars { display:flex; margin:14px 0 0 5px; }
+    .avatars span { width:28px; height:28px; display:grid; place-items:center; background:var(--gold); color:var(--green); border:2px solid var(--green); border-radius:50%; margin-left:-5px; font-size:9px; font-weight:800; }
+    .side-foot { font-size:10px; opacity:.55; margin:20px 12px 0; }
+    main { margin-left:226px; padding:29px 38px 22px; max-width:1740px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:28px; }
+    .breadcrumb { display:flex; gap:10px; align-items:center; font-size:11px; color:var(--muted); }
+    .breadcrumb strong { color:var(--green); font-size:12px; }
+    .top-info { display:flex; gap:16px; align-items:center; font-size:11px; }
+    .local-tag { display:inline-flex; gap:7px; align-items:center; border:1px solid var(--line); padding:5px 10px; border-radius:30px; font-size:10px; font-weight:700; }
+    .local-tag::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--green); }
+    .page-title { display:flex; justify-content:space-between; gap:18px; align-items:flex-end; margin-bottom:22px; }
+    h1 { font-size:27px; letter-spacing:-1.2px; margin:0 0 6px; line-height:1.4; font-weight:800; }
+    .page-title p { margin:0; font-size:12px; color:var(--muted); }
+    .button { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--line); background:var(--cream); border-radius:9px; padding:10px 14px; font-size:11px; font-weight:700; line-height:1.5; transition:transform .2s,background .2s; }
+    .button:hover { transform:translateY(-2px); background:rgb(201 171 108 / .16); }
+    .button.primary { background:var(--green); color:var(--cream); border-color:var(--green); }
+    .button.gold { background:var(--gold); color:var(--green); border-color:var(--gold); }
+    .button .icon { width:16px; height:16px; }
+    .hero { background:var(--green); color:var(--cream); border-radius:var(--radius); padding:32px 38px; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden; gap:25px; }
+    .hero::after { content:''; position:absolute; width:320px; height:320px; border:1px solid rgb(201 171 108 / .18); border-radius:50%; right:-80px; top:-100px; pointer-events:none; }
+    .hero .eyebrow { color:var(--gold); margin-bottom:12px; }
+    .hero h2 { font-size:30px; line-height:1.55; margin:0 0 12px; font-weight:800; letter-spacing:-1.3px; }
+    .hero h2 span { color:var(--gold); }
+    .hero p { color:rgb(245 242 233 / .72); font-size:12px; margin:0 0 20px; }
+    .hero-actions { display:flex; gap:9px; flex-wrap:wrap; }
+    .hero .button.secondary { background:transparent; color:var(--cream); border-color:rgb(245 242 233 / .3); }
+    .hero-right { min-width:240px; text-align:center; border-left:1px solid rgb(245 242 233 / .15); padding-left:35px; position:relative; }
+    .orbit { width:143px; height:143px; margin:0 auto 12px; border:1px solid rgb(201 171 108 / .4); border-radius:50%; display:grid; place-items:center; position:relative; }
+    .orbit::before { content:''; inset:11px; position:absolute; border:1px dashed rgb(245 242 233 / .2); border-radius:50%; animation:orbit 75s linear infinite; }
+    .orbit::after { content:''; position:absolute; width:12px; height:12px; background:var(--gold); border:4px solid var(--green); outline:1px solid var(--gold); border-radius:50%; top:9px; right:17px; }
+    .orbit b { font-size:47px; line-height:1.1; font-weight:400; letter-spacing:-2px; }
+    .orbit small { display:block; letter-spacing:2px; font-size:8px; color:var(--gold); margin-top:6px; }
+    .hero-right>p { margin:0; font-size:11px; }
+    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:20px 0 27px; }
+    .stat { border:1px solid var(--line); border-radius:14px; padding:18px 19px; background:var(--paper); }
+    .stat-top { display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--muted); }
+    .stat-top .icon { width:17px; height:17px; }
+    .stat-value { display:block; font-size:29px; font-weight:800; letter-spacing:-1px; margin:8px 0 2px; line-height:1.3; }
+    .stat-value small { font-size:14px; font-weight:400; letter-spacing:0; }
+    .stat>p { font-size:10px; color:var(--muted); margin:0; }
+    .section-head { display:flex; justify-content:space-between; align-items:center; gap:15px; margin:0 0 15px; }
+    h2,h3,p { overflow-wrap:anywhere; }
+    .section-head h2 { margin:0; font-size:17px; letter-spacing:-.6px; font-weight:800; }
+    .section-head p { margin:3px 0 0; font-size:11px; color:var(--muted); }
+    .pill { padding:4px 9px; border:1px solid var(--line); border-radius:5px; font-size:10px; white-space:nowrap; }
+    .workspace-grid { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:20px; align-items:start; }
+    .panel { border:1px solid var(--line); background:var(--paper); border-radius:var(--radius); overflow:hidden; min-width:0; }
+    .panel-head { padding:20px 22px 15px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .panel-head h3 { margin:0; font-size:13px; font-weight:800; }
+    .panel-head span { font-size:10px; color:var(--muted); }
+    .chart-tools { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:0 22px 14px; }
+    .segmented { display:flex; border:1px solid var(--line); border-radius:7px; padding:3px; gap:3px; }
+    .segmented button { border:0; font-size:10px; padding:5px 10px; border-radius:4px; }
+    .segmented button[aria-pressed=true] { background:var(--green); color:var(--cream); }
+    .chart-tools label { font-size:10px; display:flex; align-items:center; gap:5px; }
+    select { background:var(--cream); border:1px solid var(--line); border-radius:5px; padding:5px; font-size:11px; }
+    .gantt-scroll { overflow:auto; max-height:545px; scrollbar-color:var(--gold) var(--cream); }
+    .gantt { display:grid; font-size:10px; min-width:610px; position:relative; }
+    .gantt-cell { height:53px; border-top:1px solid var(--line); min-width:0; }
+    .gantt-head { height:44px; background:rgb(23 63 53 / .045); display:flex; align-items:center; justify-content:center; font-size:9px; }
+    .task-label { position:sticky; left:0; z-index:3; background:var(--cream); border:0; border-top:1px solid var(--line); border-right:1px solid var(--line); text-align:left; padding:7px 12px 7px 20px; display:flex; justify-content:space-between; align-items:center; gap:6px; }
+    .task-label strong { font-size:10px; display:block; max-width:126px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .task-label small { font-size:9px; color:var(--muted); display:block; }
+    .task-label>span:last-child { font-size:9px; font-weight:700; }
+    .task-label:hover { background:rgb(201 171 108 / .22); }
+    .gantt-task-heading { text-align:left; justify-content:flex-start; padding-left:20px; position:sticky; left:0; z-index:4; background:var(--cream); border-right:1px solid var(--line); }
+    .timeline { position:relative; border-top:1px solid var(--line); height:53px; background-image:linear-gradient(to right,transparent calc(100% - 1px),var(--line) 1px); background-size:var(--column-width) 100%; }
+    .timeline .bar { position:absolute; top:16px; height:21px; border:1px solid rgb(23 63 53 / .23); border-radius:5px; background:rgb(23 63 53 / .07); min-width:6px; overflow:hidden; padding:0; transition:width .35s; }
+    .bar-fill { display:block; height:100%; background:var(--green); opacity:.75; }
+    .bar.done { background:var(--green); }
+    .bar.done .bar-fill { opacity:1; }
+    .bar:not(.done):not(.waiting) { background:rgb(201 171 108 / .3); border-color:var(--gold); }
+    .bar:not(.done):not(.waiting) .bar-fill { background:var(--gold); opacity:1; }
+    .today-line { position:absolute; height:100%; top:0; width:1px; background:var(--gold); z-index:2; pointer-events:none; }
+    .today-head { color:var(--green); font-weight:800; background:rgb(201 171 108 / .3); }
+    .chart-legend { display:flex; flex-wrap:wrap; gap:14px; padding:14px 22px; border-top:1px solid var(--line); font-size:9px; }
+    .legend-item { display:inline-flex; align-items:center; gap:6px; }
+    .swatch { display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--green); }
+    .swatch.ongoing { background:var(--gold); }
+    .swatch.waiting { background:transparent; border:1px solid var(--green); opacity:.4; }
+    .chart-note { margin:0; padding:0 22px 17px; font-size:10px; color:var(--muted); }
+    .donut-wrap { position:relative; width:180px; height:180px; margin:12px auto 20px; }
+    .donut { width:100%; height:100%; transform:rotate(-90deg); }
+    .donut circle { fill:none; stroke-width:12; }
+    .donut .track { stroke:rgb(23 63 53 / .1); }
+    .donut .fill { stroke:var(--green); stroke-linecap:round; transition:stroke-dashoffset .75s ease; }
+    .donut-text { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .donut-text strong { font-size:34px; letter-spacing:-1px; font-weight:800; line-height:1.4; }
+    .donut-text small { font-size:10px; color:var(--muted); }
+    .progress-list { padding:0 22px 19px; display:grid; gap:13px; }
+    .progress-row { display:flex; justify-content:space-between; font-size:11px; }
+    .progress-row b { font-size:12px; }
+    .progress-tip { padding:14px 22px; background:rgb(201 171 108 / .13); border-top:1px solid var(--line); font-size:10px; color:var(--muted); }
+    .progress-tip strong { display:block; color:var(--green); margin-bottom:4px; }
+    .resources { margin-top:28px; }
+    .resource-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .resource { padding:23px; position:relative; }
+    .resource-title { display:flex; gap:12px; align-items:center; margin-bottom:18px; }
+    .resource-icon { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:rgb(23 63 53 / .07); }
+    .resource:nth-child(2) .resource-icon { background:rgb(201 171 108 / .24); }
+    .resource h3 { margin:0 0 2px; font-size:15px; font-weight:800; }
+    .resource-title p { font-size:10px; color:var(--muted); margin:0; }
+    .resource>p { font-size:11px; color:var(--muted); margin:0 0 17px; }
+    .path { font-size:10px; padding:10px 12px; background:rgb(23 63 53 / .035); border:1px solid var(--line); border-radius:7px; display:flex; gap:8px; align-items:center; margin-bottom:14px; }
+    .path span { flex:1; min-width:0; overflow-wrap:anywhere; }
+    .path button { border:0; padding:3px; flex-shrink:0; }
+    .path .icon { width:14px; height:14px; }
+    .steps { display:grid; gap:7px; font-size:11px; padding:0; margin:0 0 20px; list-style:none; counter-reset:step; }
+    .steps li { display:flex; gap:9px; align-items:flex-start; }
+    .steps li::before { counter-increment:step; content:counter(step,decimal-leading-zero); color:var(--muted); font-size:9px; font-weight:800; padding-top:2px; }
+    .resource-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .resource-foot { padding-top:14px; margin-top:16px; border-top:1px solid var(--line); font-size:10px; color:var(--muted); }
+    .guide { margin:28px 0 0; padding:22px 25px; border:1px solid var(--line); border-radius:var(--radius); }
+    .guide-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:25px; }
+    .guide-item .number { font-size:10px; color:var(--muted); margin-bottom:7px; display:block; }
+    .guide-item h3 { font-size:12px; margin:0 0 6px; }
+    .guide-item p { font-size:11px; color:var(--muted); margin:0; }
+    .data-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; padding-top:18px; border-top:1px solid var(--line); align-items:center; }
+    .data-actions .subtle { font-size:10px; color:var(--muted); margin-left:auto; }
+    footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:9px; color:var(--muted); padding:24px 0 0; }
+    footer a { text-decoration:underline; text-underline-offset:3px; }
+    .empty { padding:35px 22px; font-size:12px; color:var(--muted); text-align:center; }
+    .toast { position:fixed; bottom:25px; left:50%; transform:translate(-50%,20px); opacity:0; padding:13px 20px; border:1px solid var(--gold); background:var(--green); color:var(--cream); border-radius:10px; z-index:100; pointer-events:none; max-width:90vw; font-size:12px; transition:opacity .2s,transform .2s; }
+    .toast.visible { opacity:1; transform:translate(-50%,0); }
+    dialog { width:min(480px,calc(100% - 32px)); background:var(--cream); color:var(--green); border:1px solid var(--line); border-radius:20px; padding:27px; max-height:90vh; overflow:auto; }
+    dialog::backdrop { background:rgb(23 63 53 / .6); backdrop-filter:blur(3px); }
+    .dialog-head { display:flex; justify-content:space-between; gap:15px; align-items:center; margin-bottom:20px; }
+    .dialog-head h2 { margin:0; font-size:20px; }
+    .close { border:1px solid var(--line); border-radius:50%; width:30px; height:30px; font-size:19px; display:grid; place-items:center; padding:0; }
+    .form-grid { display:grid; gap:15px; }
+    .form-grid label { font-size:12px; font-weight:700; display:block; }
+    .form-grid input:not([type=range]) { width:100%; background:transparent; border:1px solid rgb(23 63 53 / .3); border-radius:7px; padding:10px; margin-top:6px; }
+    .date-pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    input[type=range] { width:100%; accent-color:var(--green); margin:14px 0 0; }
+    .form-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:22px; }
+    .form-actions .remove { margin-right:auto; border-style:dashed; }
+    .form-error { font-size:11px; margin:14px 0 0; min-height:18px; font-weight:700; }
+    .form-hint { font-size:10px; color:var(--muted); margin:5px 0 0; }
+    #copy-field { width:100%; margin:15px 0; background:transparent; padding:10px; border:1px solid var(--line); border-radius:7px; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    [hidden] { display:none !important; }
+    @keyframes orbit { to { transform:rotate(360deg); } }
+    @keyframes appear { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .hero,.stats,.workspace-grid,.resource-grid { animation:appear .5s ease both; }
+    @media(min-width:1600px) { main { padding-left:55px; padding-right:55px; } .workspace-grid { grid-template-columns:minmax(0,1fr) 320px; } }
+    @media(max-width:1200px) { main { padding:25px; } .sidebar { width:200px; padding-left:17px; padding-right:17px; } main { margin-left:200px; } .workspace-grid { grid-template-columns:minmax(0,1fr) 250px; gap:15px; } .hero-right { min-width:190px; padding-left:24px; } .stat { padding:15px; } }
+    @media(max-width:1000px) { .sidebar { width:78px; padding:26px 12px; align-items:center; } .brand>span:last-child,.sidebar .eyebrow,.nav span,.nav a.active::after,.side-bottom { display:none; } .nav { margin-top:35px; } .nav a { padding:13px; } main { margin-left:78px; } .hero { padding:28px; } .workspace-grid { grid-template-columns:minmax(0,1fr) 245px; } }
+    @media(max-width:800px) { .workspace-grid { grid-template-columns:1fr; } .progress-panel { display:grid; grid-template-columns:1fr 1fr; align-items:center; } .progress-panel .panel-head { grid-column:1/-1; } .donut-wrap { grid-row:2/4; margin:0 auto 20px; } .progress-list { padding:5px 22px 20px 0; } .progress-tip { grid-column:1/-1; } .resource-grid { gap:14px; } .resource { padding:20px; } }
+    @media(max-width:620px) { .sidebar { position:sticky; top:0; width:100%; height:65px; padding:10px 16px; flex-direction:row; justify-content:space-between; } .brand { gap:8px; } .brand-mark { width:34px; height:34px; border-radius:9px; font-size:15px; } .brand>span:last-child { display:block; font-size:13px; } .nav { display:flex; gap:2px; margin:0; } .nav a { padding:9px; } .nav .icon { width:18px; height:18px; } main { margin:0; padding:21px 17px; } .topbar { margin-bottom:20px; } .top-info { gap:8px; } .top-info time { display:none; } h1 { font-size:23px; } .page-title { align-items:center; } .page-title p { font-size:10px; max-width:220px; } .page-title>.button { padding:8px 10px; font-size:10px; white-space:nowrap; } .hero { padding:25px 23px; gap:14px; } .hero h2 { font-size:25px; } .hero p { font-size:10px; } .hero-right { display:none; } .hero::after { right:-160px; } .stats { grid-template-columns:1fr 1fr; gap:11px; margin-top:15px; } .stat { padding:16px; } .stat-value { font-size:27px; } .section-head h2 { font-size:16px; } .section-head p { font-size:10px; } .resource-grid { grid-template-columns:1fr; } .guide { padding:21px; } .guide-grid { grid-template-columns:1fr; gap:18px; } .guide-item { padding-bottom:15px; border-bottom:1px solid var(--line); } .guide-item:last-child { border:0; padding-bottom:0; } .data-actions .subtle { margin-left:0; width:100%; } .panel-head { padding:18px; } .chart-tools { padding-left:18px; padding-right:18px; } .progress-panel { grid-template-columns:1fr 1fr; } .donut-wrap { width:145px; height:145px; } .donut-text strong { font-size:28px; } .pill { font-size:9px; } }
+    @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+    @media print { .sidebar,.topbar,.hero-actions,.chart-tools,.data-actions,.page-title>.button,.resource-actions,.path button,.toast,dialog { display:none !important; } main { margin:0; padding:0; max-width:none; } body { print-color-adjust:exact; -webkit-print-color-adjust:exact; } .hero { padding:20px; } .workspace-grid { grid-template-columns:1fr; } .progress-panel { display:none; } .resource-grid { grid-template-columns:1fr 1fr; } .gantt-scroll { max-height:none; overflow:visible; } .gantt { min-width:0; } .panel,.stat,.resource { break-inside:avoid; } .hero h2 { font-size:24px; } footer { margin-top:20px; } }
+  </style>
+</head>
+<body>
+<!-- 02. SVG 아이콘: 외부 아이콘 라이브러리 없이 사용합니다. -->
+<svg class="sr-only" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 3v17h17M8 7h7M8 12h11M8 17h5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zM3 9h18"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6M21 21v-3a6 6 0 0 0-4-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m7 12 3 3 7-7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 16v5h16v-5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+</defs></svg>
+<a href="#overview" class="skip">본문으로 이동</a>
+<aside class="sidebar" aria-label="프로젝트 탐색">
+  <a class="brand" href="#overview" aria-label="HD 프로젝트 홈"><span class="brand-mark">HD</span><span>project studio</span></a>
+  <div class="eyebrow">WORKSPACE</div>
+  <nav class="nav" aria-label="주 메뉴">
+    <a href="#overview" class="active" aria-label="대시보드" aria-current="location"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span>대시보드</span></a>
+    <a href="#schedule" aria-label="프로젝트 일정"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg><span>프로젝트 일정</span></a>
+    <a href="#minutes" aria-label="회의록"><svg class="icon" aria-hidden="true"><use href="#i-doc"/></svg><span>회의록</span></a>
+    <a href="#files" aria-label="공유 자료실"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg><span>공유 자료실</span></a>
+    <a href="#guide" aria-label="팀 이용 안내"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>팀 이용 안내</span></a>
+  </nav>
+  <div class="side-bottom">
+    <div class="team-box"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><strong>함께 만드는 프로젝트</strong><p>자료 공유 대상 · 30명</p><div class="avatars" aria-hidden="true"><span>HD</span><span>팀</span><span>30</span></div></div>
+    <div class="side-foot">HD PROJECT / TEAM SPACE<br>작은 기록이, 함께의 결과로.</div>
+  </div>
+</aside>
+<main id="overview">
+  <header class="topbar"><div class="breadcrumb"><svg class="icon" aria-hidden="true" style="width:14px;height:14px"><use href="#i-folder"/></svg><span>HD 프로젝트</span><span>/</span><strong>Overview</strong></div><div class="top-info"><time id="today-date"></time><span class="local-tag">이 브라우저에 저장</span></div></header>
+  <div class="page-title"><div><h1>프로젝트 대시보드</h1><p>30명이 함께하는 자료 제작, 다음 한 걸음이 보이는 공간.</p></div><button class="button" id="share-html"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>공유용 HTML 저장</button></div>
+  <section class="hero" aria-labelledby="hero-title">
+    <div><div class="eyebrow">HD PROJECT · COLLABORATION HUB</div><h2 id="hero-title">일정과 자료,<br><span>한곳에서 함께.</span></h2><p>회의의 기록부터 최종 자료까지.<br>우리의 진행 상황을 확인하고, 필요한 파일을 나누세요.</p><div class="hero-actions"><a class="button gold" data-link="docs" target="_blank" rel="noopener noreferrer">회의록 열기<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg><span class="sr-only"> (새 탭)</span></a><a href="#schedule" class="button secondary">프로젝트 일정 보기</a></div></div>
+    <div class="hero-right"><div class="orbit"><div><b>30</b><small>PEOPLE, ONE PROJECT</small></div></div><p>함께 나누고, 함께 완성합니다.</p></div>
+  </section>
+  <div class="stats" aria-label="프로젝트 핵심 지표">
+    <article class="stat"><div class="stat-top">전체 진행률<svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></div><strong class="stat-value" id="stat-progress">—</strong><p>전체 업무 진행률의 단순 평균</p></article>
+    <article class="stat"><div class="stat-top">완료한 업무<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></div><strong class="stat-value" id="stat-done">—</strong><p id="stat-remaining">업무 현황을 확인하세요</p></article>
+    <article class="stat"><div class="stat-top">자료 공유 대상<svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div><strong class="stat-value">30 <small>명</small></strong><p>권한은 Google Drive에서 관리</p></article>
+    <article class="stat"><div class="stat-top">마지막 업무 마감까지<svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg></div><strong class="stat-value" id="stat-deadline">—</strong><p id="stat-end">등록된 업무 기준</p></article>
+  </div>
+  <section id="schedule" aria-labelledby="schedule-title">
+    <div class="section-head"><div><h2 id="schedule-title">한눈에 보는 프로젝트 일정</h2><p id="schedule-caption">업무명이나 막대를 선택하면 일정을 수정할 수 있어요.</p></div><button class="button primary" id="add-task"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>업무 추가</button></div>
+    <div class="workspace-grid">
+      <div class="panel"><div class="panel-head"><h3>프로젝트 타임라인</h3><span class="pill" id="sample-badge">예시 일정</span></div>
+        <div class="chart-tools"><div class="segmented" aria-label="간트차트 단위"><button data-view="week" aria-pressed="true">주간 단위</button><button data-view="day" aria-pressed="false">일간 단위</button></div><label>상태 <select id="status-filter"><option value="all">전체 업무</option><option value="progress">진행 중</option><option value="waiting">예정</option><option value="done">완료</option><option value="late">기한 초과</option></select></label></div>
+        <div class="gantt-scroll" tabindex="0" role="region" aria-label="가로로 스크롤할 수 있는 간트차트"><div id="gantt" class="gantt"></div></div>
+        <div class="chart-legend"><span class="legend-item"><i class="swatch"></i>완료</span><span class="legend-item"><i class="swatch ongoing"></i>진행 중</span><span class="legend-item"><i class="swatch waiting"></i>예정</span><span class="legend-item">│ 오늘 (한국 시간)</span></div><p class="chart-note">막대 전체는 업무 기간, 안쪽 채움은 진행률입니다. 모바일에서는 좌우로 스크롤하세요.</p>
+      </div>
+      <aside class="panel progress-panel" aria-labelledby="progress-title"><div class="panel-head"><h3 id="progress-title">우리의 진행 상황</h3><svg class="icon" aria-hidden="true" style="width:17px;height:17px"><use href="#i-chart"/></svg></div><div class="donut-wrap" id="progress-chart" role="img" aria-label="진행률 그래프"><svg class="donut" viewBox="0 0 180 180" aria-hidden="true"><circle class="track" cx="90" cy="90" r="72"/><circle class="fill" id="donut-fill" cx="90" cy="90" r="72" stroke-dasharray="452.389" stroke-dashoffset="452.389"/></svg><div class="donut-text"><strong id="donut-value">—</strong><small>전체 업무 평균</small></div></div><div class="progress-list"><div class="progress-row"><span class="legend-item"><i class="swatch"></i>완료</span><b id="count-done">—</b></div><div class="progress-row"><span class="legend-item"><i class="swatch ongoing"></i>진행 중</span><b id="count-progress">—</b></div><div class="progress-row"><span class="legend-item"><i class="swatch waiting"></i>예정</span><b id="count-waiting">—</b></div></div><div class="progress-tip"><strong id="progress-tip-title">하나씩, 함께 완성해요.</strong><span id="progress-tip-text">업무 진행률을 수정하면 그래프에 바로 반영됩니다.</span></div></aside>
+    </div>
+  </section>
+  <section class="resources" aria-labelledby="resources-title"><div class="section-head"><div><h2 id="resources-title">기록과 자료를 연결해요</h2><p>실제 문서와 파일은 Google에서 함께 관리합니다.</p></div><span class="pill">Google Workspace</span></div>
+    <div class="resource-grid">
+      <article id="minutes" class="panel resource"><div class="resource-title"><span class="resource-icon"><svg class="icon" aria-hidden="true"><use href="#i-doc"/></svg></span><div><h3>프로젝트 회의록</h3><p>GOOGLE DOCS / 웹프로젝트_01</p></div></div><p>회의의 결정과 다음 할 일을 한 문서에 차곡차곡 남깁니다.</p><div class="path"><svg class="icon" aria-hidden="true" style="width:14px;height:14px"><use href="#i-doc"/></svg><span>HD 프로젝트 / 회의록 / 웹프로젝트_01</span><button data-copy="docs" aria-label="회의록 링크 복사" title="회의록 링크 복사"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg></button></div><ol class="steps"><li>회의 날짜 · 참석자 · 안건을 기록해 주세요.</li><li>결정 사항과 후속 업무의 담당자 · 마감일을 적어 주세요.</li><li>정해진 후속 업무를 위 일정에 추가해 주세요.</li></ol><div class="resource-actions"><a class="button primary" data-link="docs" target="_blank" rel="noopener noreferrer">회의록 작성·확인<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg><span class="sr-only"> (새 탭)</span></a><button class="button" data-copy="docs">링크 복사</button></div><div class="resource-foot">지정된 Google 문서를 새 탭에서 엽니다. 문서 작성에는 편집 권한이 필요합니다.</div></article>
+      <article id="files" class="panel resource"><div class="resource-title"><span class="resource-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg></span><div><h3>팀 공유 자료실</h3><p>GOOGLE DRIVE / hd_프로젝트</p></div></div><p>HD 프로젝트에 필요한 초안, 참고 자료, 최종 파일을 주고받는 공간입니다.</p><div class="path"><svg class="icon" aria-hidden="true" style="width:14px;height:14px"><use href="#i-folder"/></svg><span>Google Drive / hd_프로젝트</span><button data-copy="folder" aria-label="공유 폴더 링크 복사" title="공유 폴더 링크 복사"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg></button></div><ol class="steps"><li><span><b>올리기</b> — 폴더 열기 → + 새로 만들기 → 파일 업로드<br>또는 열린 Drive 폴더에 파일을 끌어다 놓으세요.</span></li><li><span><b>받기</b> — 파일 선택 → 마우스 오른쪽 버튼 → 다운로드</span></li><li><span><b>파일명 권장</b> — HD_자료명_YYYYMMDD_v01</span></li></ol><div class="resource-actions"><a class="button primary" data-link="folder" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Drive에서 업로드<span class="sr-only"> (새 탭)</span></a><a class="button" data-link="folder" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>파일 받기<span class="sr-only"> (새 탭)</span></a></div><div class="resource-foot">두 버튼 모두 지정된 폴더를 엽니다. 업로드는 폴더 편집 권한, 다운로드는 소유자가 허용한 권한이 필요합니다.</div></article>
+    </div>
+  </section>
+  <section class="guide" id="guide" aria-labelledby="guide-title"><div class="section-head"><h2 id="guide-title">우리 팀 사용 가이드</h2><span class="pill">먼저 읽어 주세요</span></div><div class="guide-grid"><article class="guide-item"><span class="number">01 / ACCESS</span><h3>30명에게 문서·폴더 공유하기</h3><p>관리자가 Google 문서와 폴더의 ‘공유’에서 팀원 또는 Google 그룹을 추가해 주세요. 사이트를 열 수 있어도 Drive 권한은 별도로 필요합니다.</p></article><article class="guide-item"><span class="number">02 / UPDATE</span><h3>일정 수정은 이 브라우저에 저장</h3><p>업무명이나 막대를 눌러 날짜·담당자·진행률을 수정하세요. 현재는 예시로 시작하며, 수정 내용은 다른 팀원에게 자동 동기화되지 않습니다.</p></article><article class="guide-item"><span class="number">03 / SHARE</span><h3>관리자가 최신 버전 공유하기</h3><p>‘공유용 HTML 저장’으로 현재 일정이 담긴 파일을 받아 GitHub의 index.html을 교체하세요. 또는 일정 JSON을 자료실에 올리고 팀원이 가져올 수 있습니다.</p></article></div><div class="data-actions"><button class="button" id="export-data"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>일정 JSON 내보내기</button><button class="button" id="import-data"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>일정 JSON 가져오기</button><input type="file" id="json-file" accept="application/json,.json" hidden><button class="button" id="clear-local">게시된 일정 다시 불러오기</button><span class="subtle" id="save-status" role="status">이 브라우저에 저장 · 팀 자동 동기화 없음</span></div></section>
+  <footer><span>HD PROJECT · 30명을 위한 팀 협업 공간</span><span>문서·폴더 새 탭 연결 · <a href="https://github.com/jhgc016-max" target="_blank" rel="noopener noreferrer">GitHub 계정 ↗</a></span></footer>
+  <noscript><p>일정과 그래프를 보려면 JavaScript를 켜 주세요. <a href="https://docs.google.com/document/d/1jWdQ-jVno0jmseKnzJdQ7OwRvXtp3YUsdsx5vKOTdHI/edit?usp=sharing">회의록 열기</a> · <a href="https://drive.google.com/drive/folders/1a1sIIchtB9inxF4-0BX4MLEe8VBxiao5?usp=sharing">공유 폴더 열기</a></p></noscript>
+</main>
+<!-- 03. 업무 편집창: 업무 상태는 진행률(0=예정, 1~99=진행 중, 100=완료)으로 계산합니다. -->
+<dialog id="task-dialog" aria-labelledby="dialog-title"><form id="task-form"><div class="dialog-head"><h2 id="dialog-title">업무 추가</h2><button class="close" type="button" id="close-dialog" aria-label="편집창 닫기">×</button></div><div class="form-grid"><label>업무명<input id="task-name" maxlength="60" required placeholder="예: 최종 자료 검토" autocomplete="off"></label><label>담당자 또는 팀<input id="task-owner" maxlength="30" required placeholder="예: 자료 제작팀" autocomplete="off"></label><div class="date-pair"><label>시작일<input type="date" id="task-start" min="2000-01-01" max="2100-12-31" required></label><label>마감일<input type="date" id="task-end" min="2000-01-01" max="2100-12-31" required></label></div><label>진행률 <output id="progress-output" for="task-progress">0%</output><input type="range" id="task-progress" min="0" max="100" step="1" value="0"></label></div><p class="form-hint">업무별 최대 기간은 366일, 전체 일정 범위는 730일까지 지원합니다.</p><p class="form-error" id="form-error" role="alert"></p><div class="form-actions"><button type="button" class="button remove" id="delete-task" hidden>업무 삭제</button><button type="button" class="button" id="cancel-dialog">취소</button><button type="submit" class="button primary">저장하기</button></div></form></dialog>
+<dialog id="copy-dialog" aria-labelledby="copy-title"><div class="dialog-head"><h2 id="copy-title">링크 복사</h2><button class="close" id="close-copy" aria-label="링크 복사창 닫기">×</button></div><p>아래 주소를 선택한 뒤 복사해 주세요.</p><input id="copy-field" readonly aria-label="복사할 주소"></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<!-- 04. 최초 게시 데이터. 실제 프로젝트 일정이 정해지면 화면에서 수정하고
+     '공유용 HTML 저장'을 이용하거나 아래 JSON의 업무를 직접 수정하세요.
+     여기에 기밀 자료나 비밀키를 넣지 마세요. Google 권한은 별도로 관리됩니다. -->
+<script id="project-data" type="application/json">
+{"schemaVersion":1,"snapshotId":"hd-initial-20261104","isSample":true,"updatedAt":null,"tasks":[{"id":"t1","name":"프로젝트 킥오프","owner":"전체 팀","start":"2026-11-02","end":"2026-11-04","progress":100},{"id":"t2","name":"자료 조사·요구사항 정리","owner":"기획팀","start":"2026-11-03","end":"2026-11-08","progress":100},{"id":"t3","name":"콘텐츠 구성·초안 제작","owner":"제작팀","start":"2026-11-06","end":"2026-11-20","progress":40},{"id":"t4","name":"팀 피드백·수정 보완","owner":"검토팀","start":"2026-11-16","end":"2026-11-27","progress":10},{"id":"t5","name":"최종 자료 검수","owner":"전체 팀","start":"2026-11-26","end":"2026-12-04","progress":0},{"id":"t6","name":"30명 자료 배포·마무리","owner":"운영팀","start":"2026-12-07","end":"2026-12-11","progress":0}]}
+</script>
+<script>
+'use strict';
+/* 05. 연결 주소: 문서나 공유 폴더를 바꾸려면 이 두 주소를 수정하세요.
+   GitHub Pages는 정적 호스팅입니다. 이 파일은 Google API 인증이나 서버 없이
+   공식 문서/폴더 화면을 연결합니다. Drive 파일 자체를 수집하거나 저장하지 않습니다. */
+const LINKS = Object.freeze({
+  docs:'https://docs.google.com/document/d/1jWdQ-jVno0jmseKnzJdQ7OwRvXtp3YUsdsx5vKOTdHI/edit?usp=sharing',
+  folder:'https://drive.google.com/drive/folders/1a1sIIchtB9inxF4-0BX4MLEe8VBxiao5?usp=sharing'
+});
+const $ = id => document.getElementById(id);
+// 화면이 바뀌기 전 원본을 보관해, 현재 일정이 들어간 단일 HTML로 내보냅니다.
+const ORIGINAL_HTML = '<!doctype html>\n' + document.documentElement.outerHTML;
+const DAY = 86400000;
+const clone = value => JSON.parse(JSON.stringify(value));
+const escapeHTML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toDay = date => Date.parse(date + 'T00:00:00Z') / DAY;
+const fromDay = day => new Date(day * DAY).toISOString().slice(0,10);
+const dateLabel = date => date.slice(5).replace('-', '/');
+function todayKorea() {
+  const parts = new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+  const part = type => parts.find(p => p.type === type).value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+const statusOf = task => task.progress === 100 ? 'done' : task.progress > 0 ? 'progress' : 'waiting';
+const statusName = task => ({done:'완료',progress:'진행 중',waiting:'예정'}[statusOf(task)]);
+/* 06. 파일에서 읽은 데이터도 검증합니다. 문자열은 HTML 이스케이프 후 표시하며
+   손상된 데이터가 기존 일정을 덮어쓰지 않도록 가져오기 전에 전체를 검사합니다. */
+function validateData(data) {
+  if (!data || data.schemaVersion !== 1 || !Array.isArray(data.tasks) || data.tasks.length > 120) throw new Error('버전 1 형식의 일정 JSON(최대 120개 업무)이 필요합니다.');
+  const seen = new Set();
+  const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(toDay(value)) && fromDay(toDay(value)) === value && value >= '2000-01-01' && value <= '2100-12-31';
+  const tasks = data.tasks.map(task => {
+    if (!task || typeof task.id !== 'string' || !/^[\w-]{1,80}$/.test(task.id) || seen.has(task.id)) throw new Error('업무 ID가 올바르지 않거나 중복되었습니다.');
+    seen.add(task.id);
+    if (typeof task.name !== 'string' || !task.name.trim() || task.name.length > 60 || typeof task.owner !== 'string' || !task.owner.trim() || task.owner.length > 30) throw new Error('업무명(60자 이내)과 담당자(30자 이내)를 확인해 주세요.');
+    if (!validDate(task.start) || !validDate(task.end) || task.end < task.start || toDay(task.end)-toDay(task.start) > 365) throw new Error('시작일·마감일을 확인해 주세요. 업무별 최대 기간은 366일입니다.');
+    if (!Number.isInteger(task.progress) || task.progress < 0 || task.progress > 100) throw new Error('진행률은 0~100 사이의 정수여야 합니다.');
+    return {id:task.id,name:task.name.trim(),owner:task.owner.trim(),start:task.start,end:task.end,progress:task.progress};
+  });
+  if (tasks.length && Math.max(...tasks.map(t=>toDay(t.end)))-Math.min(...tasks.map(t=>toDay(t.start))) > 729) throw new Error('전체 일정 범위는 730일 이내로 설정해 주세요.');
+  return {schemaVersion:1,snapshotId:typeof data.snapshotId==='string' && /^[\w-]{1,100}$/.test(data.snapshotId)?data.snapshotId:'hd-import',isSample:data.isSample===true,updatedAt:typeof data.updatedAt==='string' && Number.isFinite(Date.parse(data.updatedAt)) ? data.updatedAt:null,tasks};
+}
+const BOOT = validateData(JSON.parse($('project-data').textContent));
+// 게시 파일마다 저장 공간을 구분하여, 새 HTML 배포 시 예전 브라우저 데이터가 우선되지 않게 합니다.
+const STORAGE_KEY = 'hd-project-v1:' + BOOT.snapshotId;
+let state = clone(BOOT), viewMode = 'week', editingId = null, toastTimer;
+let storageAvailable = true;
+try { const saved = localStorage.getItem(STORAGE_KEY); if (saved) state = validateData(JSON.parse(saved)); }
+catch { storageAvailable = false; }
+document.querySelectorAll('[data-link]').forEach(a => a.href = LINKS[a.dataset.link]);
+function toast(message) {
+  $('toast').textContent = message; $('toast').classList.add('visible');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>$('toast').classList.remove('visible'),4200);
+}
+function save() {
+  state.updatedAt = new Date().toISOString();
+  try { localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); storageAvailable = true; }
+  catch { storageAvailable = false; toast('브라우저에 저장하지 못했습니다. HTML 또는 JSON으로 내보내 주세요.'); }
+  render();
+}
+/* 07. 통계: 필터와 관계없이 전체 업무를 기준으로 단순 평균을 계산합니다.
+   기한 초과는 한국 시간 기준 마감일이 지났고 진행률이 100 미만인 업무입니다. */
+function render() {
+  const today = todayKorea(), tasks = state.tasks, total = tasks.length;
+  const count = status => tasks.filter(t=>statusOf(t)===status).length;
+  const average = total ? Math.round(tasks.reduce((sum,t)=>sum+t.progress,0)/total) : 0;
+  const late = tasks.filter(t=>t.end<today && t.progress<100).length;
+  $('today-date').textContent = new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date());
+  $('today-date').dateTime = today;
+  $('stat-progress').textContent = `${average}%`;
+  $('stat-done').innerHTML = `${count('done')} <small>/ ${total}개</small>`;
+  $('stat-remaining').textContent = `${total-count('done')}개 남음${late ? ` · 기한 초과 ${late}개` : ''}`;
+  if (total) {
+    const end = tasks.reduce((max,t)=>t.end>max?t.end:max,tasks[0].end), diff = toDay(end)-toDay(today);
+    $('stat-deadline').textContent = diff>0?`D−${diff}`:diff===0?'D-DAY':`D+${Math.abs(diff)}`;
+    $('stat-end').textContent = `${end.replaceAll('-','.')} · ${state.isSample?'예시 일정 기준':'등록된 업무 기준'}`;
+  } else { $('stat-deadline').textContent='—'; $('stat-end').textContent='등록된 마감일이 없습니다'; }
+  $('donut-value').textContent = `${average}%`;
+  $('donut-fill').style.strokeDashoffset = String(2*Math.PI*72*(1-average/100));
+  $('progress-chart').setAttribute('aria-label',`전체 업무 ${total}개, 평균 진행률 ${average}%, 완료 ${count('done')}개, 진행 중 ${count('progress')}개, 예정 ${count('waiting')}개`);
+  ['done','progress','waiting'].forEach(s=>$('count-'+s).textContent=`${count(s)}개`);
+  $('sample-badge').textContent=state.isSample?'예시 일정 · 수정 가능':'내 일정 · 브라우저 저장';
+  $('progress-tip-title').textContent=total && count('done')===total?'모든 업무가 완료되었어요.':late?`기한이 지난 업무 ${late}개를 확인해 주세요.`:'하나씩, 함께 완성해요.';
+  $('progress-tip-text').textContent=state.isSample?'현재 수치는 예시 데이터입니다. 실제 일정과 진행률로 수정해 주세요.':'업무를 수정하면 전체 진행률이 바로 다시 계산됩니다.';
+  $('save-status').textContent=storageAvailable?(state.updatedAt?`마지막 수정 ${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(state.updatedAt))} · 이 브라우저에 저장`:'예시 데이터 · 팀 자동 동기화 없음'):'임시 표시 중 · 브라우저 저장 불가 · 파일로 내보내 주세요';
+  renderGantt(today);
+}
+/* 08. 간트차트: 날짜를 UTC 일수로 바꾸어 일광절약시간 오차를 피합니다.
+   일정 길이에 맞추어 주·일 격자를 만들며, 업무명이 왼쪽에 고정됩니다. */
+function renderGantt(today) {
+  const root = $('gantt'), filter = $('status-filter').value;
+  const all = state.tasks, visible = all.filter(t=>filter==='all' || (filter==='late'?t.end<today && t.progress<100:statusOf(t)===filter)).sort((a,b)=>a.start.localeCompare(b.start));
+  if (!all.length || !visible.length) { root.style.display='block'; root.style.minWidth='0'; root.innerHTML=`<div class="empty">${all.length?'이 상태의 업무가 없습니다.':'첫 업무를 추가해 프로젝트 일정을 시작하세요.'}</div>`; return; }
+  const first = Math.min(...all.map(t=>toDay(t.start))), last = Math.max(...all.map(t=>toDay(t.end)));
+  const weekday = new Date(first*DAY).getUTCDay();
+  const start = viewMode==='week' ? first-((weekday+6)%7) : first;
+  const unit = viewMode==='week'?7:1, columns = Math.ceil((last-start+1)/unit), end = start+columns*unit, range = end-start;
+  const labelWidth = 190, minCell = viewMode==='week'?65:38;
+  root.style.display='grid'; root.style.minWidth=`${Math.max(610,labelWidth+columns*minCell)}px`;
+  root.style.gridTemplateColumns=`${labelWidth}px repeat(${columns},minmax(0,1fr))`;
+  const todayDay = toDay(today), todayPercent = (todayDay-start+.5)/range*100;
+  const todayMarkup = todayPercent>=0 && todayPercent<=100 ? `<span class="today-line" style="left:${todayPercent}%"></span>` : '';
+  let html = '<div class="gantt-head gantt-task-heading">업무 / 담당자 · 진행률</div>';
+  for (let i=0;i<columns;i++) { const d = start+i*unit, isToday = todayDay>=d && todayDay<d+unit; html+=`<div class="gantt-head${isToday?' today-head':''}">${dateLabel(fromDay(d))}${unit===7?' 주':''}${isToday?' · 오늘':''}</div>`; }
+  visible.forEach(t=>{
+    const left = (toDay(t.start)-start)/range*100, width = (toDay(t.end)-toDay(t.start)+1)/range*100;
+    const label = `${t.name}, ${t.owner}, ${t.start}부터 ${t.end}까지, ${statusName(t)} ${t.progress}%. 수정하기`;
+    html+=`<button class="task-label gantt-cell" data-edit="${escapeHTML(t.id)}" aria-label="${escapeHTML(label)}"><span><strong>${escapeHTML(t.name)}</strong><small>${escapeHTML(t.owner)} · ${statusName(t)}</small></span><span>${t.progress}%</span></button><div class="timeline" style="grid-column:2 / -1;--column-width:${100/columns}%">${todayMarkup}<button class="bar ${statusOf(t)}" data-edit="${escapeHTML(t.id)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}" style="left:${left}%;width:${width}%"><span class="bar-fill" style="width:${t.progress}%"></span></button></div>`;
+  });
+  root.innerHTML=html;
+}
+/* 09. 업무 편집, 추가, 삭제. 삭제·가져오기·초기화는 확인 후 수행합니다. */
+function openEditor(id=null) {
+  if (!id && state.tasks.length>=120) { toast('업무는 최대 120개까지 등록할 수 있습니다.'); return; }
+  editingId=id;
+  const task=id?state.tasks.find(t=>t.id===id):{name:'',owner:'',start:todayKorea(),end:todayKorea(),progress:0};
+  if (!task) return;
+  $('task-form').reset(); $('dialog-title').textContent=id?'업무 수정':'업무 추가';
+  ['name','owner','start','end','progress'].forEach(key=>$('task-'+key).value=task[key]);
+  $('progress-output').textContent=task.progress+'%'; $('form-error').textContent=''; $('delete-task').hidden=!id;
+  $('task-dialog').showModal(); $('task-name').focus();
+}
+$('add-task').addEventListener('click',()=>openEditor());
+$('gantt').addEventListener('click',e=>{ const button=e.target.closest('[data-edit]'); if (button) openEditor(button.dataset.edit); });
+['close-dialog','cancel-dialog'].forEach(id=>$(id).addEventListener('click',()=>$('task-dialog').close()));
+$('task-progress').addEventListener('input',()=>$('progress-output').textContent=$('task-progress').value+'%');
+$('task-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const task={id:editingId || 't-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8),name:$('task-name').value,owner:$('task-owner').value,start:$('task-start').value,end:$('task-end').value,progress:Number($('task-progress').value)};
+  const next=clone(state); if (editingId) next.tasks=next.tasks.map(t=>t.id===editingId?task:t); else next.tasks.push(task);
+  try { const checked=validateData(next); state=checked; state.isSample=false; save(); $('task-dialog').close(); toast(storageAvailable?'업무를 저장했습니다. 팀 공유는 HTML 또는 JSON으로 내보내 주세요.':'현재 화면에 반영했습니다. 저장하려면 파일로 내보내 주세요.'); }
+  catch(error) { $('form-error').textContent=error.message; }
+});
+$('delete-task').addEventListener('click',()=>{
+  const task=state.tasks.find(t=>t.id===editingId);
+  if (task && confirm(`‘${task.name}’ 업무를 삭제할까요? 이 브라우저의 일정에서 삭제됩니다.`)) { state.tasks=state.tasks.filter(t=>t.id!==editingId); state.isSample=false; save(); $('task-dialog').close(); toast('업무를 삭제했습니다.'); }
+});
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
+  viewMode=button.dataset.view; document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button))); renderGantt(todayKorea());
+}));
+$('status-filter').addEventListener('change',()=>renderGantt(todayKorea()));
+/* 10. 내보내기·가져오기: 서버와 자동 동기화하지 않습니다.
+   HTML 내보내기는 JSON 내 '<'를 유니코드로 바꾸어 script 태그 삽입을 방지합니다. */
+function download(content,type,filename) {
+  const blob=new Blob([content],{type}), url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+function exportSnapshot() { const data=clone(state); data.snapshotId='hd-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8); return data; }
+$('export-data').addEventListener('click',()=>{ download(JSON.stringify(exportSnapshot(),null,2),'application/json;charset=utf-8',`HD_프로젝트_일정_${todayKorea()}.json`); toast('일정 JSON을 저장했습니다. 자료실에 올려 팀원과 공유하세요.'); });
+$('share-html').addEventListener('click',()=>{
+  const json=JSON.stringify(exportSnapshot()).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
+  const opening='<script id="project-data" type="application/json">', closing='<'+'/script>';
+  const begin=ORIGINAL_HTML.indexOf(opening)+opening.length, finish=ORIGINAL_HTML.indexOf(closing,begin);
+  if (begin<opening.length || finish<0) { toast('HTML 내보내기에 실패했습니다. JSON으로 저장해 주세요.'); return; }
+  download(ORIGINAL_HTML.slice(0,begin)+'\n'+json+'\n'+ORIGINAL_HTML.slice(finish),'text/html;charset=utf-8','index.html');
+  toast('현재 일정이 담긴 index.html을 저장했습니다. GitHub 파일을 교체해 주세요.');
+});
+$('import-data').addEventListener('click',()=>$('json-file').click());
+$('json-file').addEventListener('change',async e=>{
+  const file=e.target.files[0]; if (!file) return;
+  try {
+    if (file.size>1024*1024) throw new Error('1MB 이하의 일정 JSON 파일만 가져올 수 있습니다.');
+    const next=validateData(JSON.parse(await file.text()));
+    if (!confirm(`현재 일정 ${state.tasks.length}개를 파일의 일정 ${next.tasks.length}개로 교체할까요? 필요하면 먼저 내보내기로 보관해 주세요.`)) return;
+    state=next; save(); toast('일정을 가져왔습니다. 이 브라우저에 적용됩니다.');
+  } catch(error) { toast('가져오기 실패: '+error.message); }
+  finally { e.target.value=''; }
+});
+$('clear-local').addEventListener('click',()=>{
+  if (!confirm('이 브라우저의 수정 내용을 지우고 현재 HTML에 게시된 일정으로 돌아갈까요? 필요하면 먼저 내보내기로 보관해 주세요.')) return;
+  state=clone(BOOT);
+  try { localStorage.removeItem(STORAGE_KEY); storageAvailable=true; } catch { storageAvailable=false; }
+  render(); toast('현재 HTML에 게시된 일정을 불러왔습니다.');
+});
+/* 11. 링크 복사: 로컬 파일/브라우저 정책으로 클립보드 접근이 막혀도 수동 복사 가능. */
+document.querySelectorAll('[data-copy]').forEach(button=>button.addEventListener('click',async()=>{
+  const url=LINKS[button.dataset.copy];
+  try { if (!navigator.clipboard) throw new Error('clipboard unavailable'); await navigator.clipboard.writeText(url); toast('링크를 복사했습니다.'); }
+  catch { $('copy-field').value=url; $('copy-dialog').showModal(); $('copy-field').focus(); $('copy-field').select(); }
+}));
+$('close-copy').addEventListener('click',()=>$('copy-dialog').close());
+// 현재 보는 구역을 메뉴에 표시합니다. 동작 효과는 reduced-motion 환경을 존중합니다.
+if ('IntersectionObserver' in window) {
+  const observer=new IntersectionObserver(entries=>{
+    const entry=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+    if (!entry) return;
+    document.querySelectorAll('.nav a').forEach(a=>{ const active=a.hash==='#'+entry.target.id; a.classList.toggle('active',active); if(active) a.setAttribute('aria-current','location'); else a.removeAttribute('aria-current'); });
+  },{rootMargin:'-10% 0px -50% 0px',threshold:0});
+  ['overview','schedule','minutes','files','guide'].forEach(id=>observer.observe($(id)));
+}
+render();
+// 한국 시간 자정이 지난 경우에도 오늘 표시·기한 초과 수치를 갱신합니다.
+let lastDay=todayKorea();
+setInterval(()=>{const now=todayKorea(); if(now!==lastDay){lastDay=now;render();}},60000);
+</script>
+</body>
+</html>
